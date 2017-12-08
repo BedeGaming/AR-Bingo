@@ -1,0 +1,265 @@
+<head>
+  <link rel="stylesheet" href='./style.css'>
+</head>
+<!-- <meta http-equiv="refresh" content="30"> -->
+<!-- AR.js by @jerome_etienne - github: https://github.com/jeromeetienne/ar.js - info: https://medium.com/arjs/augmented-reality-in-10-lines-of-html-4e193ea9fdbf -->
+<script src="https://cdn.rawgit.com/jeromeetienne/AR.js/1.5.1/aframe/examples/vendor/aframe/build/aframe.min.js"></script>
+<script src="https://cdn.rawgit.com/jeromeetienne/AR.js/1.5.1/aframe/build/aframe-ar.js"></script>
+<script src="https://unpkg.com/aframe-text-geometry-component@^0.5.0/dist/aframe-text-geometry-component.min.js"></script>
+<!--<script src="https://unpkg.com/aframe-particle-system-component@1.0.9/dist/aframe-particle-system-component.min.js"></script>"-->
+<body style='margin : 0px; overflow: hidden;'>
+  <div style="position: fixed; bottom: 10px; width:100%; text-align: center; z-index: 1;color: grey;"><button onClick=newGame()>NEW GAME</button></div></div>
+
+  <a-scene embedded arjs='trackingMethod: best;'>
+    <!-- <a-marker-camera type="pattern" preset='hiro' patternUrl="pattern-marker.patt"></a-marker-camera> -->
+
+    <a-assets>
+         <img id="bingo_card" src="./bingo.jpg">
+         <a-asset-item id="optimerBoldFont" src="https://rawgit.com/mrdoob/three.js/dev/examples/fonts/optimer_bold.typeface.json"></a-asset-item>
+      </a-assets>
+
+      <a-anchor>
+        <a-box id="bingoCardObject" position='0 0 0' src="#bingo_card" material='opacity:1;' height=0.01>
+          <a-entity id="countdownText_3" text-geometry="value:3" material="opacity:1; color:red" position="-0.5 0.3 -5" align="left" scale="0 0 0" width="0.1" color="red" height="1" color="red">
+            <a-animation class="numberIntroAnimationClass" attribute="scale" to="2 2 2" begin="start"></a-animation>
+            <a-animation class="numberIntroAnimationClass" attribute="position" to="-0.5 0.3 0" begin="start"></a-animation>
+            <a-animation class="numberIntroAnimationClass" attribute="visible" to="false" delay="1500" begin="start"></a-animation>
+            <a-animation class="numberIntroAnimationClass" attribute="material.opacity" to="0" easing="ease-in-out" delay="800" begin="start"></a-animation>
+          </a-entity>
+
+          <a-entity id="countdownText_2" text-geometry="value:2" material="opacity:1; color:green" position="-0.5 0.3 -5" align="left" scale="0 0 0" width="0.1" color="red" height="1" color="red">
+            <a-animation class="numberIntroAnimationClass" attribute="scale" to="2 2 2"  begin="start"></a-animation>
+            <a-animation class="numberIntroAnimationClass" attribute="position" to="-0.5 0.3 0" begin="start" ></a-animation>
+            <a-animation class="numberIntroAnimationClass" attribute="visible" to="false" delay="1500" begin="start"></a-animation>
+            <a-animation class="numberIntroAnimationClass" attribute="material.opacity" to="0" easing="ease-in-out" delay="800" begin="start"></a-animation>
+          </a-entity>
+
+          <a-entity id="countdownText_1" text-geometry="value:1" material="opacity:1; color:yellow" position="-0.5 0.3 -5" align="left" scale="0 0 0" width="0.1" color="red" height="1" color="red">
+            <a-animation class="numberIntroAnimationClass" attribute="scale" to="2 2 2" begin="start"></a-animation>
+            <a-animation class="numberIntroAnimationClass" attribute="position" to="-0.5 0.3 0" begin="start"></a-animation>
+            <a-animation class="numberIntroAnimationClass" attribute="visible" to="false" delay="1500" begin="start"></a-animation>
+            <a-animation class="numberIntroAnimationClass" attribute="material.opacity" to="0" easing="ease-in-out" delay="800" begin="start"></a-animation>
+          </a-entity>
+
+          <a-entity id="countdownText_0" text-geometry="value:Good Luck!" material="opacity:1; color:blue" position="-0.5 0.3 -5" align="center" scale="0 0 0" width="0.1" color="red" height="0.1" color="red">
+            <a-animation class="numberIntroAnimationClass" attribute="scale" to="2 2 2" begin="start"></a-animation>
+            <a-animation class="numberIntroAnimationClass" attribute="position" to="-0.5 0.3 0" begin="start"></a-animation>
+            <a-animation class="numberIntroAnimationClass" attribute="visible" to="false" delay="1500" begin="start"></a-animation>
+            <a-animation class="numberIntroAnimationClass" attribute="material.opacity" to="0" easing="ease-in-out" delay="800" begin="start"></a-animation>
+          </a-entity>
+
+          <a-box id="bingoGrid" position='0 0 0.05' material='' width=0.9 depth=0.9 height=0>
+          </a-box>
+        </a-box>
+
+      </a-anchor>
+      <!--<a-entity id="snow" particle-system="preset: snow; color: #bee0eb; particleCount: 50000"></a-entity>-->
+
+		<a-camera-static/>
+	</a-scene>
+</body>
+
+<script>
+// Bingo engine - RNG
+let totalAmountOfBingoBalls = 10;
+let numbers =  Array.apply(null, Array(totalAmountOfBingoBalls)).map((value, i) => i+1)
+
+function shuffle(o) {
+  for(let j, x, i = o.length; i; j = parseInt(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x);
+  return o;
+};
+// End Bingo Engine
+
+// Create markers
+
+let totalAmountOfRows = 5;
+let totalAmountOfCols = 5;
+let startXPosition = -0.36;
+let startYPosition = -0.36;
+let cellIncrement = 0.18;
+
+let bingoCardSizeColumns = 5;
+let bingoCardSizeRows = 5;
+
+let bingoCardRows = [...Array(bingoCardSizeRows).keys()];
+let cellID = 1;
+let cellBingoNumber = 1;
+let bingoCells = [];
+let totalNumberOfCells =  Array.apply(null, Array(25)).map((value, i) => i+1);
+let bingoGrid = document.querySelector('#bingoGrid');
+let i = 0;                     //  set your counter to 1
+let bingoNumbers = []; //shuffle(numbers);
+let bingoMarker = [];
+
+let newGame = function() {
+  clearCallboard();
+
+  let randomCellBingoNumbers = shuffle(totalNumberOfCells);
+  bingoNumbers = shuffle(numbers);
+
+  bingoCardRows.forEach(function (value, index){
+    bingoCardRows[index] = [...Array(bingoCardSizeColumns).keys()]
+    y = (startYPosition + index * cellIncrement).toFixed(2);
+
+    bingoCardRows[index].forEach( function(value, i) {
+
+    	x = (startXPosition + i* cellIncrement).toFixed(2);
+      cellBingoNumber = randomCellBingoNumbers[cellID - 1];
+      bingoCells.push({cellID, cellBingoNumber, x, y})
+      cellID++;
+    });
+  });
+
+  bingoCells.forEach(function(value, index) {
+     let entityEl = document.createElement('a-box');
+     let entityBingoBallEl = document.createElement('a-sphere');
+     let entityBingoBallPositionAnimationEl = document.createElement('a-animation');
+     let entityBingoBallOpacityAnimationEl = document.createElement('a-animation');
+     let textEl = document.createElement('a-text');
+     let rotationEl = document.createElement('a-entity');
+
+     entityEl.setAttribute('id', `bingoMarker_${value.cellID}`);
+     entityEl.setAttribute('class', 'bingoMarker');
+     entityEl.setAttribute('position', `${value.x} 0.02 ${value.y}`);
+     entityEl.setAttribute('material', 'opacity:0.1; color:black');
+     entityEl.setAttribute('width', '0.125');
+     entityEl.setAttribute('depth', '0.125');
+     entityEl.setAttribute('height', '0.03');
+
+     // Text for each grid box
+     textEl.setAttribute('value', value.cellBingoNumber);
+     textEl.setAttribute('color', 'blue');
+     textEl.setAttribute('height', '1.5');
+     textEl.setAttribute('width', '1.5');
+     textEl.setAttribute('font', 'exo2semibold');
+     textEl.setAttribute('rotation', '-90 0 0');
+     textEl.setAttribute('position', '-0.04 0.02 0.04');
+
+     // Setup the bingo ball ready to drop ( the bass)
+     entityBingoBallEl.setAttribute('id', `bingoBall_cell_${value.cellID}`)
+     entityBingoBallEl.setAttribute('position', `${value.x} 3 ${value.y}`);
+     entityBingoBallEl.setAttribute('material', 'opacity:1; color:#db1018');
+     entityBingoBallEl.setAttribute('geometry', 'radius:0.05;');
+     entityBingoBallEl.setAttribute('visible', 'false');
+
+     entityBingoBallPositionAnimationEl.setAttribute('id', `bingoBall_cell_positionanimation_${value.cellID}`)
+     entityBingoBallPositionAnimationEl.setAttribute('to',`${value.x} 0.021 ${value.y}`);
+     entityBingoBallPositionAnimationEl.setAttribute('attribute','position');
+     entityBingoBallPositionAnimationEl.setAttribute('begin', 'dropBall');
+
+     //entityBingoBallAnimationEl.setAttribute('begin','250')
+     entityBingoBallOpacityAnimationEl.setAttribute('easing', 'ease-in-out');
+     entityBingoBallOpacityAnimationEl.setAttribute('id', `bingoBall_cell_opacityanimation_${value.cellID}`)
+     entityBingoBallOpacityAnimationEl.setAttribute('to',`0`);
+     entityBingoBallOpacityAnimationEl.setAttribute('attribute','material.opacity');
+     entityBingoBallOpacityAnimationEl.setAttribute('delay','500');
+     entityBingoBallOpacityAnimationEl.setAttribute('begin', 'dropBall');
+
+     entityBingoBallEl.appendChild(entityBingoBallPositionAnimationEl);
+     entityBingoBallEl.appendChild(entityBingoBallOpacityAnimationEl);
+
+     // Add to the parents
+     entityEl.appendChild(textEl);
+     bingoGrid.appendChild(entityEl);
+     bingoGrid.appendChild(entityBingoBallEl)
+  });
+
+  bingoMarker = document.querySelectorAll('.bingoMarker');
+
+  var cc = 3;
+
+  var interval = setInterval(function() {
+    let selector = `#countdownText_${cc}`
+    let countdownTextEl = document.querySelector(selector);
+
+    countdownTextEl.emit('start');
+
+    --cc;
+
+    console.log(cc + 1)
+
+    if (cc === 0) {
+      clearInterval(interval);
+      bingoGamePlay();
+    }
+  }, 1000);
+}
+
+
+
+// End Markers
+var loop;
+
+function bingoGamePlay() {
+    //  create a loop function
+   loop = function() {    //  call a 3s setTimeout when the loop is called
+      let currentCellObject = bingoCells.find(object => object.cellBingoNumber == bingoNumbers[i]);
+
+      dabNumber(currentCellObject.cellID);
+
+      i++;                     //  increment the counter
+
+      if (i < bingoNumbers.length) {            //  if the counter < 10, call the loop function
+         bingoGamePlay();            //  ..  again which will trigger another
+      } else {
+        console.info('Game Fin');
+      }                        //  ..  setTimeout()
+   };
+
+   setTimeout(loop, 1000)
+}
+
+function dabNumber(cellID) {
+  let selector = `#bingoMarker_${cellID}`;
+
+  let cellToDab = document.querySelector(selector);
+  let position = cellToDab.getAttribute('position');
+  let height =  0.2;
+  dropBall(cellID);
+
+  setTimeout(() => {
+    cellToDab.setAttribute('color','green');
+    cellToDab.setAttribute('opacity', '0.4');
+    cellToDab.setAttribute('height', '0.1');
+    cellToDab.setAttribute('position', position);
+  }, 1000);
+  // position.y = position.y - 0.2;
+
+
+}
+
+function clearCallboard() {
+  const bingoGrid1 = document.querySelector('#bingoGrid');
+
+  while (bingoGrid1.firstChild) {
+      bingoGrid1.removeChild(bingoGrid1.firstChild);
+  }
+
+  i = 0;
+  bingoNumbers = [];
+
+  clearInterval(loop);
+}
+
+function dropBall(onCellID) {
+  let selector = `#bingoBall_cell_${onCellID}`
+  // Make ball visible
+  document.querySelector(selector).setAttribute('visible','true');
+
+  //Start the opacity animation
+  selector = `#bingoBall_cell_opacityanimation_${onCellID}`
+  document.querySelector(selector).emit('dropBall');
+
+  //Start the drop animation
+  selector = `#bingoBall_cell_positionanimation_${onCellID}`
+  document.querySelector(selector).emit('dropBall');
+}
+
+// setTimeout(() => {
+//   newGame();
+// }, 1000);
+
+function refresh() {
+  location.reload();
+}
+</script>
